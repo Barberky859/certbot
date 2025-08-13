@@ -271,6 +271,7 @@ class DNSTest(unittest.TestCase):
         self.jmsg = {
             'type': 'dns',
             'token': 'evaGxfADs6pSRb2LAv9IZf17Dt3juxGJ-PCt92wr-oA',
+        
         }
 
     def test_to_partial_json(self):
