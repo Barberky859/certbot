@@ -57,11 +57,13 @@ export GPG_TTY=$(tty)
 PORT=${PORT:-1234}
 
 # subpackages to be released (the way the script thinks about them)
-SUBPKGS_NO_CERTBOT="acme certbot-apache certbot-nginx certbot-dns-cloudflare \
-                    certbot-dns-digitalocean certbot-dns-dnsimple certbot-dns-dnsmadeeasy \
-                    certbot-dns-gehirn certbot-dns-google certbot-dns-linode certbot-dns-luadns \
-                    certbot-dns-nsone certbot-dns-ovh certbot-dns-rfc2136 certbot-dns-route53 \
-                    certbot-dns-sakuracloud"
+SUBPKGS_TOML="acme"
+SUBPKGS_SETUP="certbot-apache certbot-nginx certbot-dns-cloudflare \
+                certbot-dns-digitalocean certbot-dns-dnsimple certbot-dns-dnsmadeeasy \
+                certbot-dns-gehirn certbot-dns-google certbot-dns-linode certbot-dns-luadns \
+                certbot-dns-nsone certbot-dns-ovh certbot-dns-rfc2136 certbot-dns-route53 \
+                certbot-dns-sakuracloud"
+SUBPKGS_NO_CERTBOT="$SUBPKGS_TOML $SUBPKGS_SETUP"
 SUBPKGS="certbot $SUBPKGS_NO_CERTBOT"
 # certbot_compatibility_test is not packaged because:
 # - it is not meant to be used by anyone else than Certbot devs
@@ -110,7 +112,7 @@ done
 SetVersion() {
     ver="$1"
     # bumping Certbot's version number is done differently
-    for pkg_dir in $SUBPKGS_NO_CERTBOT certbot-compatibility-test
+    for pkg_dir in $SUBPKGS_SETUP certbot-compatibility-test
     do
       setup_file="$pkg_dir/setup.py"
       if [ $(grep -c '^version' "$setup_file") != 1 ]; then
@@ -118,6 +120,15 @@ SetVersion() {
         exit 1
       fi
       sed -i "s/^version.*/version = '$ver'/" $pkg_dir/setup.py
+    done
+    for pkg_dir in $SUBPKGS_TOML
+    do
+      toml_file="$pkg_dir/pyproject.toml"
+      if [ $(grep -c '^version' "$toml_file") != 1 ]; then
+        echo "Unexpected count of version variables in $toml_file"
+        exit 1
+      fi
+      sed -i "s/^version.*/version = '$ver'/" $pkg_dir/pyproject.toml
     done
     init_file="certbot/src/certbot/__init__.py"
     if [ $(grep -c '^__version' "$init_file") != 1 ]; then
